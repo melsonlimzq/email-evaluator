@@ -179,6 +179,22 @@ details[open] summary{margin-bottom:8px}
 .gen-btn:disabled{color:#9ca3af;border-color:#d1d5db;cursor:not-allowed;background:#f9fafb}
 .gen-spin{width:14px;height:14px;border:2px solid #c7d2fe;border-top-color:#4361ee;border-radius:50%;animation:spin .8s linear infinite;display:none}
 
+/* API KEY SETUP */
+.api-banner{background:#1a1a2e;color:white;padding:12px 28px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.api-banner-text{font-size:13px;color:#c7d2fe}
+.api-banner-text strong{color:white}
+.api-input-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.api-input{padding:8px 12px;border:1.5px solid rgba(255,255,255,.2);border-radius:6px;background:rgba(255,255,255,.1);color:white;font-size:13px;width:340px;font-family:inherit}
+.api-input::placeholder{color:rgba(255,255,255,.4)}
+.api-input:focus{outline:none;border-color:#4361ee}
+.api-save-btn{padding:8px 16px;background:#4361ee;color:white;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap}
+.api-save-btn:hover{background:#3451d1}
+.api-clear-btn{padding:8px 12px;background:transparent;color:rgba(255,255,255,.5);border:1px solid rgba(255,255,255,.2);border-radius:6px;font-size:12px;cursor:pointer}
+.api-clear-btn:hover{color:white;border-color:rgba(255,255,255,.5)}
+.api-ok{display:flex;align-items:center;gap:8px;font-size:13px;color:#86efac}
+.api-ok-change{font-size:12px;color:rgba(255,255,255,.5);cursor:pointer;text-decoration:underline}
+.api-ok-change:hover{color:white}
+
 /* PRINT */
 @media print{
   body{background:white}
@@ -196,6 +212,21 @@ details[open] summary{margin-bottom:8px}
 </style>
 </head>
 <body>
+
+<!-- API KEY BANNER (shown only outside Cowork) -->
+<div id="apiBanner" style="display:none">
+  <div class="api-banner">
+    <div class="api-banner-text"><strong>Anthropic API Key required</strong> &mdash; this app is running outside Cowork and needs your API key to evaluate emails.</div>
+    <div id="apiSetupRow" class="api-input-row">
+      <input type="password" class="api-input" id="apiKeyInput" placeholder="sk-ant-..." />
+      <button class="api-save-btn" onclick="saveApiKey()">Save Key</button>
+    </div>
+    <div id="apiOkRow" class="api-ok" style="display:none">
+      &#10003; API key saved &nbsp;<span class="api-ok-change" onclick="changeApiKey()">Change</span>
+      <button class="api-clear-btn" onclick="clearApiKey()">Remove</button>
+    </div>
+  </div>
+</div>
 
 <div class="hdr no-print">
   <div class="hdr-left">
@@ -308,6 +339,90 @@ details[open] summary{margin-bottom:8px}
 </div>
 
 <script>
+// ── API KEY MANAGEMENT ────────────────────────────────────────────────
+function initApiSetup() {
+  var hasCowork = window.cowork && typeof window.cowork.askClaude === 'function';
+  if (hasCowork) return; // inside Cowork — no setup needed
+  document.getElementById('apiBanner').style.display = 'block';
+  var saved = getSavedKey();
+  if (saved) showApiOk(); else showApiSetup();
+}
+
+function getSavedKey() {
+  try { return localStorage.getItem('anthropicApiKey') || ''; } catch(e) { return ''; }
+}
+
+function saveApiKey() {
+  var key = document.getElementById('apiKeyInput').value.trim();
+  if (!key.startsWith('sk-')) { alert('Please enter a valid Anthropic API key (starts with sk-ant- or sk-).'); return; }
+  try { localStorage.setItem('anthropicApiKey', key); } catch(e) {}
+  showApiOk();
+}
+
+function clearApiKey() {
+  try { localStorage.removeItem('anthropicApiKey'); } catch(e) {}
+  document.getElementById('apiKeyInput').value = '';
+  showApiSetup();
+}
+
+function changeApiKey() {
+  document.getElementById('apiKeyInput').value = '';
+  showApiSetup();
+}
+
+function showApiOk() {
+  document.getElementById('apiSetupRow').style.display = 'none';
+  document.getElementById('apiOkRow').style.display = 'flex';
+}
+
+function showApiSetup() {
+  document.getElementById('apiSetupRow').style.display = 'flex';
+  document.getElementById('apiOkRow').style.display = 'none';
+}
+
+// ── AI CALL WRAPPER ───────────────────────────────────────────────────
+async function callAI(prompt) {
+  // Use Cowork if available (inside the Cowork artifact)
+  if (window.cowork && typeof window.cowork.askClaude === 'function') {
+    var r = await window.cowork.askClaude(prompt);
+    if (typeof r === 'string') return r;
+    if (r && typeof r === 'object') return r.text || r.content || r.response || r.message || JSON.stringify(r);
+    return String(r || '');
+  }
+
+  // Direct Anthropic API (GitHub Pages / standalone)
+  var apiKey = getSavedKey();
+  if (!apiKey) throw new Error('No API key saved. Please enter your Anthropic API key in the banner above.');
+
+  var resp = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 8000,
+      messages: [{role: 'user', content: prompt}]
+    })
+  });
+
+  if (!resp.ok) {
+    var errBody = await resp.json().catch(function(){return {};});
+    var msg = (errBody.error && errBody.error.message) ? errBody.error.message : resp.statusText;
+    if (resp.status === 401) throw new Error('Invalid API key. Please update your key in the banner above.');
+    if (resp.status === 429) throw new Error('Rate limit reached. Please wait a moment and try again.');
+    throw new Error('API error ' + resp.status + ': ' + msg);
+  }
+
+  var data = await resp.json();
+  if (data.content && data.content[0] && data.content[0].text) return data.content[0].text;
+  throw new Error('Unexpected API response format');
+}
+// ─────────────────────────────────────────────────────────────────────
+
 // ── ROBUST JSON PARSER ────────────────────────────────────────────────
 function robustParse(raw) {
   if (!raw || !raw.trim()) throw new Error('Empty response from AI');
@@ -499,17 +614,8 @@ async function runEvaluation() {
 
   try {
     var prompt = buildPrompt(url, lp, subject, preHdr, email, marketer);
-    var rawResult = await window.cowork.askClaude(prompt);
+    var raw = await callAI(prompt);
     clearInterval(stepTimer);
-
-    var raw;
-    if (typeof rawResult === 'string') {
-      raw = rawResult;
-    } else if (rawResult && typeof rawResult === 'object') {
-      raw = rawResult.text || rawResult.content || rawResult.response || rawResult.message || JSON.stringify(rawResult);
-    } else {
-      raw = String(rawResult || '');
-    }
 
     var data;
     try {
@@ -783,11 +889,7 @@ async function generateImproved() {
 
   try {
     var prompt = buildImprovedPrompt(lastInputs, lastData);
-    var rawResult2 = await window.cowork.askClaude(prompt);
-    var raw = typeof rawResult2 === 'string' ? rawResult2
-      : (rawResult2 && typeof rawResult2 === 'object')
-        ? (rawResult2.text || rawResult2.content || rawResult2.response || rawResult2.message || JSON.stringify(rawResult2))
-        : String(rawResult2 || '');
+    var raw = await callAI(prompt);
 
     document.getElementById('genWrap').style.display = 'none';
     var body = document.getElementById('impBody');
@@ -831,6 +933,9 @@ function resetForm() {
   });
   lastData = null; lastInputs = null;
 }
+
+// Init on load
+window.addEventListener('DOMContentLoaded', initApiSetup);
 </script>
 </body>
 </html>
