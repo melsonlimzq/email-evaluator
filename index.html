@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Email Evaluator — Financial Education</title>
+<style>
+:root { color-scheme: light; }
+*{box-sizing:border-box;margin:0;padding:0}
+
+body{
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  background:#f0f2f8;
+  color:#1a1a2e;
+  min-height:100vh;
+}
+
+/* HEADER */
+.hdr{
+  background:linear-gradient(135deg,#1a1a2e 0%,#16213e 100%);
+  color:white;padding:16px 28px;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.hdr-left{display:flex;align-items:center;gap:12px}
+.hdr-logo{
+  width:36px;height:36px;background:#4361ee;
+  border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px
+}
+.hdr-title{font-size:18px;font-weight:700}
+.hdr-sub{font-size:11px;color:#8892b0;margin-top:1px}
+.mas-badge{
+  border:1px solid rgba(255,255,255,.2);color:#a8dadc;
+  font-size:11px;font-weight:600;padding:4px 10px;border-radius:20px;letter-spacing:.5px
+}
+
+/* MAIN */
+.main{max-width:880px;margin:0 auto;padding:28px 18px 60px}
+
+/* CARD */
+.card{background:white;border-radius:14px;box-shadow:0 2px 16px rgba(0,0,0,.07);overflow:hidden;margin-bottom:0}
+.card-hdr{padding:22px 28px 18px;border-bottom:1px solid #f0f2f8}
+.card-title{font-size:20px;font-weight:700;margin-bottom:3px}
+.card-sub{color:#666;font-size:13px}
+.card-body{padding:24px 28px}
+
+/* ALERT */
+.alert{display:flex;gap:10px;padding:12px 14px;border-radius:8px;font-size:13px;margin-bottom:22px;line-height:1.5}
+.alert-warn{background:#fffbeb;border:1px solid #fde68a;color:#78350f}
+.alert-err{background:#fee2e2;border:1px solid #fca5a5;color:#991b1b}
+
+/* FORM */
+.fg{margin-bottom:18px}
+.lbl{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;margin-bottom:7px;color:#374151}
+.req{color:#ef4444}
+.opt{background:#f3f4f6;color:#6b7280;font-size:11px;font-weight:500;padding:1px 6px;border-radius:4px}
+input[type=url],input[type=text],textarea{
+  width:100%;padding:11px 13px;border:1.5px solid #e5e7eb;border-radius:8px;
+  font-size:14px;font-family:inherit;color:#1f2937;background:#fafafa;transition:all .15s
+}
+input:focus,textarea:focus{
+  outline:none;border-color:#4361ee;background:white;
+  box-shadow:0 0 0 3px rgba(67,97,238,.1)
+}
+textarea{resize:vertical}
+.hint{font-size:12px;color:#9ca3af;margin-top:4px}
+.submit-btn{
+  width:100%;padding:13px;background:#4361ee;color:white;border:none;
+  border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  transition:all .2s;margin-top:4px
+}
+.submit-btn:hover{background:#3451d1;transform:translateY(-1px);box-shadow:0 4px 14px rgba(67,97,238,.35)}
+.submit-btn:active{transform:translateY(0)}
+.submit-btn:disabled{background:#9ca3af;cursor:not-allowed;transform:none;box-shadow:none}
+
+/* LOADING */
+#loadingSection{
+  display:none;background:white;border-radius:14px;
+  padding:56px 28px;text-align:center;box-shadow:0 2px 16px rgba(0,0,0,.07)
+}
+.spinner{
+  width:52px;height:52px;border:4px solid #e5e7eb;border-top-color:#4361ee;
+  border-radius:50%;animation:spin .85s linear infinite;margin:0 auto 20px
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.load-title{font-size:17px;font-weight:700;margin-bottom:5px}
+.load-sub{color:#6b7280;font-size:13px;margin-bottom:22px}
+.load-steps{display:flex;flex-direction:column;gap:8px;align-items:center}
+.lstep{font-size:13px;color:#d1d5db;transition:color .4s}
+.lstep.active{color:#4361ee;font-weight:600}
+.lstep.done{color:#22c55e}
+
+/* RESULTS */
+#resultsSection{display:none}
+
+/* BANNER */
+.banner{
+  background:white;border-radius:14px;
+  box-shadow:0 2px 16px rgba(0,0,0,.07);
+  padding:26px 28px;margin-bottom:18px;
+  display:flex;align-items:flex-start;justify-content:space-between;gap:20px;flex-wrap:wrap
+}
+.score-display{display:flex;align-items:baseline;gap:3px}
+.score-num{font-size:60px;font-weight:900;line-height:1}
+.score-den{font-size:20px;color:#9ca3af;font-weight:400}
+.score-pass{color:#22c55e}.score-warn{color:#f59e0b}.score-fail{color:#ef4444}
+
+.cpill{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:5px 12px;border-radius:20px;font-size:12px;font-weight:600;margin-top:8px
+}
+.cpill-pass{background:#dcfce7;color:#166534}
+.cpill-fail{background:#fee2e2;color:#991b1b}
+.cpill-warn{background:#fef3c7;color:#92400e}
+
+.threshold-panel{flex:1;min-width:220px}
+.tp-title{font-size:13px;font-weight:700;margin-bottom:10px;color:#374151}
+.all-pass{
+  display:flex;align-items:center;gap:8px;background:#dcfce7;
+  color:#166534;padding:10px 14px;border-radius:8px;font-size:13px;font-weight:600
+}
+.some-fail{
+  display:flex;align-items:center;gap:8px;background:#fee2e2;
+  color:#991b1b;padding:10px 14px;border-radius:8px;font-size:13px;font-weight:600;margin-bottom:10px
+}
+.fail-row{
+  display:flex;align-items:center;justify-content:space-between;
+  font-size:12px;color:#ef4444;margin-bottom:5px
+}
+
+/* SECTION */
+.section{margin-bottom:18px}
+.sec-title{
+  font-size:15px;font-weight:700;margin-bottom:12px;
+  color:#1a1a2e;display:flex;align-items:center;gap:7px
+}
+
+/* CRITERIA GRID */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:620px){.grid2{grid-template-columns:1fr}}
+
+.crit-card{
+  background:white;border-radius:10px;
+  box-shadow:0 1px 6px rgba(0,0,0,.06);
+  padding:16px 18px;border-top:3px solid #e5e7eb
+}
+.crit-card.pass{border-top-color:#22c55e}
+.crit-card.warn{border-top-color:#f59e0b}
+.crit-card.fail{border-top-color:#ef4444}
+
+.ch{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:9px;gap:6px}
+.cn{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#6b7280;line-height:1.3}
+.cs{font-size:24px;font-weight:800;line-height:1;flex-shrink:0}
+.cs.pass{color:#22c55e}.cs.warn{color:#f59e0b}.cs.fail{color:#ef4444}
+
+.sbar{height:5px;background:#f0f0f0;border-radius:3px;margin-bottom:11px;position:relative;overflow:visible}
+.sbar-fill{height:100%;border-radius:3px;transition:width 1s ease}
+.sbar-fill.pass{background:#22c55e}.sbar-fill.warn{background:#f59e0b}.sbar-fill.fail{background:#ef4444}
+.tmarker{
+  position:absolute;top:-3px;bottom:-3px;left:85%;width:2px;
+  background:#374151;opacity:.2;border-radius:1px
+}
+.tmarker::after{
+  content:'8.5';position:absolute;top:-15px;left:50%;transform:translateX(-50%);
+  font-size:9px;color:#9ca3af;white-space:nowrap
+}
+
+.cd{font-size:12px}
+.di{margin-bottom:7px}
+.dl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:#374151;margin-bottom:2px}
+.dt{color:#4b5563;line-height:1.5}
+
+details summary{
+  cursor:pointer;font-size:12px;color:#4361ee;font-weight:500;margin-top:8px;
+  user-select:none;list-style:none
+}
+details summary::-webkit-details-marker{display:none}
+details summary:hover{color:#3451d1}
+details[open] summary{margin-bottom:8px}
+
+/* 3-col */
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+@media(max-width:680px){.grid3{grid-template-columns:1fr}}
+@media(max-width:900px) and (min-width:681px){.grid3{grid-template-columns:1fr 1fr}}
+
+.list-card{
+  background:white;border-radius:10px;
+  box-shadow:0 1px 6px rgba(0,0,0,.06);padding:16px 18px
+}
+.lct{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px}
+.lct.green{color:#22c55e}.lct.red{color:#ef4444}.lct.blue{color:#4361ee}
+.li{
+  font-size:12px;color:#374151;margin-bottom:7px;
+  padding-left:14px;position:relative;line-height:1.5
+}
+.li::before{content:'→';position:absolute;left:0;color:#9ca3af}
+
+/* IMPROVED */
+.imp-card{background:white;border-radius:10px;box-shadow:0 1px 6px rgba(0,0,0,.06);overflow:hidden}
+.imp-hdr{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 18px;cursor:pointer;background:#f8faff;border-bottom:1px solid #e5e7eb
+}
+.imp-hdr:hover{background:#eef2ff}
+.imp-title{font-size:13px;font-weight:700;color:#1a1a2e;display:flex;align-items:center;gap:7px}
+.imp-body{padding:18px;display:none}
+.imp-body.open{display:block}
+.imp-text{
+  font-size:13px;color:#374151;line-height:1.8;
+  white-space:pre-wrap;font-family:inherit
+}
+
+/* BUTTONS */
+.copy-btn{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:7px 13px;background:#4361ee;color:white;border:none;
+  border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;transition:background .2s
+}
+.copy-btn:hover{background:#3451d1}
+
+.reset-btn{
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  padding:11px 22px;background:white;color:#4361ee;
+  border:1.5px solid #4361ee;border-radius:8px;font-size:14px;font-weight:600;
+  cursor:pointer;transition:all .2s;margin:20px auto 0;width:fit-content
+}
+.reset-btn:hover{background:#eef2ff}
+
+/* GENERATE IMPROVED BTN */
+.gen-btn{
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  width:100%;padding:11px;background:#f8faff;color:#4361ee;
+  border:1.5px dashed #4361ee;border-radius:8px;font-size:13px;
+  font-weight:600;cursor:pointer;transition:all .2s
+}
+.gen-btn:hover{background:#eef2ff}
+.gen-btn:disabled{color:#9ca3af;border-color:#d1d5db;cursor:not-allowed;background:#f9fafb}
+
+.gen-spinner{
+  width:14px;height:14px;border:2px solid #c7d2fe;border-top-color:#4361ee;
+  border-radius:50%;animation:spin .8s linear infinite;display:none
+}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-left">
+    <div class="hdr-logo">📊</div>
+    <div>
+      <div class="hdr-title">Email Evaluator</div>
+      <div class="hdr-sub">Financial Education · Singapore</div>
+    </div>
+  </div>
+  <div class="mas-badge">MAS COMPLIANT</div>
+</div>
+
+<div class="main">
+
+  <!-- FORM -->
+  <div id="formSection" class="card">
+    <div class="card-hdr">
+      <div class="card-title">Submit Email for Evaluation</div>
+      <div class="card-sub">Scored across <strong>16 criteria</strong> — each evaluated through the lens of Direct Response, AIDA, Objection Reframing, Curiosity Gap, Compliance-Safe Proof, and Customer Journey frameworks. Every criterion must reach <strong>8.5 / 10</strong> to pass.</div>
+    </div>
+    <div class="card-body">
+
+      <div class="alert alert-warn">
+        <span style="font-size:16px;flex-shrink:0">⚠️</span>
+        <span>All 16 criteria must score <strong>≥ 8.5 / 10</strong>. Each criterion is evaluated through the lens of 6 copywriting frameworks: Direct Response, AIDA, Objection Reframing, Curiosity Gap, Compliance-Safe Proof, and Customer Journey Alignment. Any specific % returns, dollar income claims, or guarantees trigger an automatic <strong>0.0</strong> for the affected criterion and <em>student_proof_bridge</em>.</span>
+      </div>
+
+      <div class="fg">
+        <div class="lbl">Landing Page URL <span class="req">*</span></div>
+        <input type="url" id="lpUrl" placeholder="https://example.com/your-webinar-page" />
+        <div class="hint">The page your email CTA points to</div>
+      </div>
+
+      <div class="fg">
+        <div class="lbl">Landing Page Key Copy <span class="opt">optional but recommended</span></div>
+        <textarea id="lpContent" rows="4" placeholder="Paste the landing page headline, sub-headline, and key selling points here. Helps evaluate email ↔ landing page alignment more accurately."></textarea>
+        <div class="hint">Without this, alignment scoring is based on URL context only</div>
+      </div>
+
+      <div class="fg">
+        <div class="lbl">Email Subject Title <span class="req">*</span></div>
+        <input type="text" id="emailSubject" placeholder="e.g. Why Most Retail Investors Feel Stuck (And What Actually Helps)" />
+      </div>
+
+      <div class="fg">
+        <div class="lbl">Pre-Header Text <span class="opt">optional but scored</span></div>
+        <input type="text" id="preHeader" placeholder="e.g. Most people are waiting for a sign. This might be it." />
+        <div class="hint">The preview line readers see after the subject line in their inbox. Leave blank if not using one.</div>
+      </div>
+
+      <div class="fg">
+        <div class="lbl">Full Email Copy <span class="req">*</span></div>
+        <textarea id="emailCopy" rows="14" placeholder="Paste the complete email body here — pre-header, body text, and CTA..."></textarea>
+        <div class="hint">Include everything exactly as it will be sent</div>
+      </div>
+
+      <div id="formError"></div>
+
+      <button class="submit-btn" id="submitBtn" onclick="runEvaluation()">
+        <span>⚡</span> Evaluate Email
+      </button>
+    </div>
+  </div>
+
+  <!-- LOADING -->
+  <div id="loadingSection">
+    <div class="spinner"></div>
+    <div class="load-title">Evaluating your email…</div>
+    <div class="load-sub">Analysing 16 criteria through Direct Response, AIDA, Curiosity Gap, and 3 other frameworks</div>
+    <div class="load-steps">
+      <div class="lstep" id="s1">📋 Checking MAS compliance…</div>
+      <div class="lstep" id="s2">🎯 Scoring subject line and curiosity hooks…</div>
+      <div class="lstep" id="s3">💡 Analysing objection handling and emotional flow…</div>
+      <div class="lstep" id="s4">🔗 Checking email–landing page alignment…</div>
+      <div class="lstep" id="s5">✅ Compiling your report…</div>
+    </div>
+  </div>
+
+  <!-- RESULTS -->
+  <div id="resultsSection"></div>
+
+</div>
+
+<script>
+// ── ROBUST JSON PARSER ──────────────────────────────────────────────────
+function robustParse(raw) {
+  if (!raw || !raw.trim()) throw new Error('Empty response from AI');
+
+  // 1. Strip markdown code fences (```json ... ``` or ``` ... ```)
+  let text = raw.replace(/```(?:json)?\s*/gi, '').replace(/```\s*/g, '').trim();
+
+  // 2. Find the outermost JSON object
+  const start = text.indexOf('{');
+  const end   = text.lastIndexOf('}');
+  if (start === -1 || end === -1 || end <= start) throw new Error('No JSON object found in response');
+
+  let jsonStr = text.slice(start, end + 1);
+
+  // 3. Direct parse attempt
+  try { return JSON.parse(jsonStr); } catch (_) {}
+
+  // 4. Fix unescaped control characters inside JSON string values
+  //    Strategy: only replace bare \n \r \t that appear INSIDE quoted strings
+  jsonStr = fixJsonNewlines(jsonStr);
+  try { return JSON.parse(jsonStr); } catch (_) {}
+
+  // 5. Last resort: strip all control characters except structural whitespace
+  jsonStr = jsonStr.split('').map(function(c){var n=c.charCodeAt(0);return(n<32&&n!==9&&n!==10&&n!==13)?'':c;}).join('');
+  try { return JSON.parse(jsonStr); } catch (e) {
+    throw new Error('JSON still invalid after cleanup: ' + e.message);
+  }
+}
+
+function fixJsonNewlines(str) {
+  // Walk char-by-char tracking whether we're inside a JSON string
+  let out = '';
+  let inStr = false;
+  let escaped = false;
+  for (let i = 0; i < str.length; i++) {
+    const ch = str[i];
+    if (escaped) { out += ch; escaped = false; continue; }
+    if (ch === '\\') { out += ch; escaped = true; continue; }
+    if (ch === '"') { inStr = !inStr; out += ch; continue; }
+    if (inStr) {
+      // Inside a string: escape bare newlines/tabs
+      if (ch === '\n') { out += '\\n'; continue; }
+      if (ch === '\r') { out += '\\r'; continue; }
+      if (ch === '\t') { out += '\\t'; continue; }
+    }
+    out += ch;
+  }
+  return out;
+}
+// ────────────────────────────────────────────────────────────────────────
+
+const CRITERIA = [
+  {key:'subject_line',             label:'Subject Line'},
+  {key:'pre_header_text',          label:'Pre-Header Text'},
+  {key:'not_ready_reframe',        label:'Not-Ready Reframe'},
+  {key:'barrier_removal',          label:'Barrier Removal'},
+  {key:'apc_question',             label:'APC Question'},
+  {key:'student_proof_bridge',     label:'Student Proof Bridge'},
+  {key:'curiosity_mirror',         label:'Curiosity Mirror'},
+  {key:'curiosity_without_action', label:'Curiosity Without Action'},
+  {key:'social_comparison',        label:'Social Comparison'},
+  {key:'uncomfortably_good_line',  label:'Uncomfortably Good Line'},
+  {key:'reverse_psychology_cta',   label:'Reverse Psychology CTA'},
+  {key:'overall_flow',             label:'Overall Flow'},
+  {key:'webinar_promise_specificity', label:'Webinar Promise Specificity'},
+  {key:'urgency_framing',          label:'Urgency Framing'},
+  {key:'readability_scanability',  label:'Readability & Scanability'},
+  {key:'email_landing_page_alignment', label:'Email–LP Alignment'},
+];
+
+const MIN = 8.5;
+let lastData = null;
+let lastInputs = null;
+
+function cls(score){
+  return score >= MIN ? 'pass' : score >= 7 ? 'warn' : 'fail';
+}
+
+function esc(s){
+  if(!s) return '';
+  const d = document.createElement('div');
+  d.appendChild(document.createTextNode(s));
+  return d.innerHTML;
+}
+
+async function runEvaluation(){
+  const url       = document.getElementById('lpUrl').value.trim();
+  const lp        = document.getElementById('lpContent').value.trim();
+  const subject   = document.getElementById('emailSubject').value.trim();
+  const preHeader = document.getElementById('preHeader').value.trim();
+  const email     = document.getElementById('emailCopy').value.trim();
+
+  document.getElementById('formError').innerHTML = '';
+
+  if(!url || !subject || !email){
+    document.getElementById('formError').innerHTML =
+      '<div class="alert alert-err" style="margin-top:12px"><span style="font-size:16px">❌</span><span>Please fill in all required fields: Landing Page URL, Subject Title, and Email Copy.</span></div>';
+    return;
+  }
+
+  lastInputs = {url, lp, subject, preHeader, email};
+
+  document.getElementById('formSection').style.display = 'none';
+  document.getElementById('loadingSection').style.display = 'block';
+  document.getElementById('resultsSection').style.display = 'none';
+  document.getElementById('resultsSection').innerHTML = '';
+
+  // Animate steps
+  const steps = ['s1','s2','s3','s4','s5'];
+  let si = 0;
+  const stepTimer = setInterval(()=>{
+    if(si > 0) document.getElementById(steps[si-1]).classList.add('done');
+    if(si < steps.length){
+      document.getElementById(steps[si]).classList.add('active');
+      si++;
+    } else clearInterval(stepTimer);
+  }, 2800);
+
+  try {
+    const prompt = buildEvalPrompt(url, lp, subject, preHeader, email);
+    const rawResult = await window.cowork.askClaude(prompt);
+    clearInterval(stepTimer);
+
+    // Normalise whatever askClaude returns into a plain string
+    let raw;
+    if (typeof rawResult === 'string') {
+      raw = rawResult;
+    } else if (rawResult && typeof rawResult === 'object') {
+      // Could be {text:...}, {content:...}, {response:...}, or the object IS the JSON we want
+      raw = rawResult.text || rawResult.content || rawResult.response || rawResult.message || JSON.stringify(rawResult);
+    } else {
+      raw = String(rawResult || '');
+    }
+
+    let data;
+    try {
+      data = robustParse(raw);
+    } catch(e){
+      const preview = raw ? raw.slice(0, 800) : '(empty)';
+      throw new Error(`Parse failed: ${e.message}\n\nRaw (first 800 chars):\n${preview}`);
+    }
+
+    lastData = data;
+    render(data);
+
+  } catch(err){
+    clearInterval(stepTimer);
+    document.getElementById('loadingSection').style.display = 'none';
+    document.getElementById('formSection').style.display = 'block';
+    document.getElementById('formError').innerHTML =
+      `<div class="alert alert-err" style="margin-top:12px;white-space:pre-wrap"><span style="font-size:16px;flex-shrink:0">❌</span><span><strong>Evaluation failed:</strong>\n${esc(err.message)}</span></div>`;
+  }
+}
+
+function buildEvalPrompt(url, lp, subject, preHeader, email){
+  return `You are an expert direct-response email evaluator for a financial education company in Singapore.
+
+EVALUATION FRAMEWORK:
+Score each criterion through the lens of ALL SIX of these copywriting frameworks simultaneously. Each framework is mapped to the criteria it most influences — use the framework principles as your scoring benchmark, not just surface-level observation.
+
+FRAMEWORK 1 — DIRECT RESPONSE EMAIL FRAMEWORK
+Principles: Every sentence must earn the next. The email exists to drive ONE action (webinar registration). It must open with a pattern interrupt, build tension through a specific problem, tease a solution, and close with a clear emotionally-charged CTA.
+Primary influence on: subject_line, pre_header_text, overall_flow, reverse_psychology_cta, urgency_framing, readability_scanability
+
+FRAMEWORK 2 — AIDA (Attention → Interest → Desire → Action)
+Attention: Subject + pre-header must stop the scroll. Interest: Body must hook with a relatable problem and deepen it. Desire: Must make the reader picture a better outcome through attending. Action: CTA must feel like the natural next step, not a sales push.
+Primary influence on: subject_line, pre_header_text, apc_question, curiosity_mirror, webinar_promise_specificity, reverse_psychology_cta
+
+FRAMEWORK 3 — OBJECTION REFRAMING
+The email must identify, name, and reframe the top objections before the reader raises them. Objections include: 'I am not ready yet', 'I have tried this before', 'I do not have time', 'This is not for someone like me', 'I will be sold to'. Reframing means flipping the objection into a reason to attend — e.g. not being ready is exactly why this session exists.
+Primary influence on: not_ready_reframe, barrier_removal, apc_question, social_comparison
+
+FRAMEWORK 4 — CURIOSITY GAP
+The email must deliberately open information gaps that can only be closed by attending the webinar. It should tease insights, name a problem without giving the answer, and use tension-building language. The reader must feel: 'I need to know what happens next.' The email must NOT give away the full solution.
+Primary influence on: curiosity_mirror, curiosity_without_action, apc_question, uncomfortably_good_line, webinar_promise_specificity
+
+FRAMEWORK 5 — COMPLIANCE-SAFE PROOF
+Social proof and student results must be framed without specific % returns, dollar figures, or guarantees. Compliant proof focuses on clarity gained, confidence built, frameworks learned, and process discovered. Non-compliant proof (even implied) scores 0.0 for the affected criterion and student_proof_bridge.
+Primary influence on: student_proof_bridge, social_comparison, email_landing_page_alignment
+
+FRAMEWORK 6 — CUSTOMER JOURNEY ALIGNMENT
+The email must meet the reader where they are (unaware or problem-aware stage), move them to solution-aware through the body, and position the webinar as the logical bridge to their desired outcome. The journey must flow seamlessly from email → landing page — same pain, same promise, same audience, same tone.
+Primary influence on: overall_flow, email_landing_page_alignment, webinar_promise_specificity, urgency_framing, not_ready_reframe
+
+MAS COMPLIANCE RULE:
+Specific % returns, dollar income claims, guaranteed results, or promises of making money → automatic 0.0 for that criterion AND student_proof_bridge.
+
+SCORING SCALE (0–10):
+0–2 = Missing / non-compliant | 3–4 = Vague / generic | 5–6 = Acceptable | 7–8 = Strong | 9–10 = Excellent — apply each relevant framework principle when deciding the score
+
+CRITERIA:
+1. subject_line – [AIDA: Attention | Direct Response: Pattern interrupt] Compelling, curiosity-driven, click-worthy. No hype or income claims. Does it stop the scroll AND create an information gap?
+2. pre_header_text – [AIDA: Attention | Direct Response: Second hook] Extends the subject with a second curiosity layer. Must not repeat the subject. If absent, score based on how strongly the opening line serves as inbox preview.
+3. not_ready_reframe – [Objection Reframing | Customer Journey] Directly names the 'I am not ready' objection and flips it. Shows that waiting is itself the trap. Positions the webinar as the clarity session, not a test.
+4. barrier_removal – [Objection Reframing | Direct Response] Dissolves the single biggest psychological barrier: beginner fear, time scarcity, fear of being sold to, past failure, or scepticism. Makes attending feel low-risk and relevant.
+5. apc_question – [AIDA: Interest | Curiosity Gap | Objection Reframing] An Agitate-Pain-Curiosity question that creates visceral emotional tension. The reader must think: 'That is exactly me.' It names the pain and opens a gap.
+6. student_proof_bridge – [Compliance-Safe Proof | Customer Journey] Real student transformation that bridges to the webinar promise. No % returns, no dollar figures. Proof must show mindset shift, clarity gained, or process discovered.
+7. curiosity_mirror – [Curiosity Gap | AIDA: Interest] Reflects the reader's internal monologue back at them. Feels like the email was written for their exact situation. Creates the feeling: 'How did they know?'
+8. curiosity_without_action – [Curiosity Gap | Direct Response] Creates an open loop — teases the insight or framework without revealing it. Reader must attend to close the gap. Does NOT give away the full answer in the email.
+9. social_comparison – [Objection Reframing | Compliance-Safe Proof] Shows others like the reader are already taking action. Subtle, not pushy. No income claims. Normalises attending for working adults, not just experts.
+10. uncomfortably_good_line – [Curiosity Gap | AIDA: Desire] At least one line so painfully true it makes the reader pause. It should feel like a mirror held up to a thought they have never said out loud.
+11. reverse_psychology_cta – [Direct Response | AIDA: Action] CTA uses reverse psychology or emotionally intelligent framing instead of generic 'Register now'. Should feel like a challenge or an invitation, not a push.
+12. overall_flow – [Direct Response | AIDA | Customer Journey] Hook → Pain → Reframe → Curiosity → Proof → Promise → CTA. Each section earns the next. No jarring transitions, no premature sales pitch, no random structure.
+13. webinar_promise_specificity – [AIDA: Desire | Customer Journey | Curiosity Gap] Crystal-clear statement of what the reader walks away with. Must be specific (a named framework, a process, a skill) — not vague ('learn about the market'). Vague promises score low.
+14. urgency_framing – [Direct Response | Customer Journey] Genuine, non-manipulative reason to act now: a specific date, limited seats, or a closing deadline tied to a real event. Manufactured or absent urgency scores low.
+15. readability_scanability – [Direct Response | AIDA] Easy to skim on mobile. Short paragraphs (1–3 lines), white space, no walls of text. CTA is visually distinct. Dense unbroken text scores low regardless of copy quality.
+16. email_landing_page_alignment – [Customer Journey | Compliance-Safe Proof] Email promise, pain point, audience framing, and CTA expectation flow seamlessly into the landing page. No disconnect in tone, angle, or offer. No compliance risks on either side.
+
+SUBMISSION:
+Landing Page URL: ${url}
+Landing Page Key Content: ${lp || '(not provided — infer from URL context)'}
+Email Subject: ${subject}
+Pre-Header Text: ${preHeader || '(none provided)'}
+Email Copy:
+${email}
+
+IMPORTANT OUTPUT RULES:
+- Return ONLY raw valid JSON. No markdown code fences. No explanation text before or after.
+- All string values must be on a single line — use \\n if you need a line break inside a string value.
+- Do not use double-quotes inside string values — use single quotes or rephrase instead.
+- Keep each string value concise (under 100 words).
+
+Use this exact JSON structure:
+{
+  "overall_score": <number 0–160, sum of all 16 criteria>,
+  "compliance_status": "<Passed|Failed due to income/return claims|Needs revision due to risky wording>",
+  "compliance_note": "<explain which exact sentence caused the issue, or empty string if Passed>",
+  "criteria": {
+    "subject_line":               {"score":<0–10>,"what_worked":"<str>","needs_improvement":"<str>","suggested_improvement":"<str>"},
+    "pre_header_text":            {"score":<0–10>,"what_worked":"<str>","needs_improvement":"<str>","suggested_improvement":"<str>"},
+    "not_ready_reframe":          {"score":<0–10>,"what_worked":"<str>","needs_improvement":"<str>","suggested_improvement":"<str>"},
+    "barrier_removal":            {"score":<0–10>,"what_worked":"<str>","needs_improvement":"<str>","suggested_improvement":"<str>"},
+    "apc_question":               {"score":<0–10>,"what_worked":"<str>","needs_improvement":"<str>","suggested_improvement":"<str>"},
+    "student_proof_bridge":       {"score":<0–10>,"what_worked":"<str>","needs_improvement":"<str>","suggested_improvement":"<str>"},
+    "curiosity_mirror":           {"score":<0–10>,"what_worked":"<str>","needs_improvement":"<str>","suggested_improvement":"<str>"},
+    "curiosity_without_action":   {"score":<0–10>,"what_worked":"<str>","needs_improvement":"<str>","suggested_improvement":"<str>"},
+    "social_comparison":          {"score":<0–10>,"what_worked":"<str>","needs_improvement":"<str>","suggested_improvement":"<str>"},
+    "uncomfortably_good_line":    {"score":<0–10>,"what_worked":"<str>","needs_improvement":"<str>","suggested_improvement":"<str>"},
+    "reverse_psychology_cta":     {"score":<0–10>,"what_worked":"<str>","needs_improvement":"<str>","suggested_improvement":"<str>"},
+    "overall_flow":               {"score":<0–10>,"what_worked":"<str>","needs_improvement":"<str>","suggested_improvement":"<str>"},
+    "webinar_promise_specificity":{"score":<0–10>,"what_worked":"<str>","needs_improvement":"<str>","suggested_improvement":"<str>"},
+    "urgency_framing":            {"score":<0–10>,"what_worked":"<str>","needs_improvement":"<str>","suggested_improvement":"<str>"},
+    "readability_scanability":    {"score":<0–10>,"what_worked":"<str>","needs_improvement":"<str>","suggested_improvement":"<str>"},
+    "email_landing_page_alignment":{"score":<0–10>,"what_worked":"<str>","needs_improvement":"<str>","suggested_improvement":"<str>"}
+  },
+  "top_3_strengths": ["<str>","<str>","<str>"],
+  "top_3_weaknesses": ["<str>","<str>","<str>"],
+  "compliance_fixes": "<rewrite any non-compliant sentences into MAS-safe alternatives, or 'None required'>",
+  "customer_journey_fixes": "<how to better align email with landing page across promise, pain, CTA, curiosity, and audience match>"
+}`;
+}
+
+function buildImprovedPrompt(inputs, data){
+  const feedback = CRITERIA.map(c=>{
+    const cr = data.criteria[c.key];
+    return `- ${c.label} (${cr.score}/10): ${cr.needs_improvement} → ${cr.suggested_improvement}`;
+  }).join('\n');
+
+  return `You are a direct-response email copywriter for a financial education company in Singapore.
+Rewrite the email below to score 8.5+ on all 16 evaluation criteria. The rewritten email must fully apply all six copywriting frameworks: Direct Response (every sentence earns the next, one CTA), AIDA (Attention → Interest → Desire → Action), Objection Reframing (name and flip the top 3 objections), Curiosity Gap (open loops that can only be closed by attending), Compliance-Safe Proof (no % returns, no dollar figures, no guarantees), and Customer Journey Alignment (meet reader where they are, bridge to desired outcome via the webinar). The email must be MAS-compliant throughout.
+
+ORIGINAL EMAIL SUBJECT: ${inputs.subject}
+
+ORIGINAL EMAIL:
+${inputs.email}
+
+IMPROVEMENT NOTES FROM EVALUATOR:
+${feedback}
+
+LANDING PAGE CONTEXT:
+URL: ${inputs.url}
+Key copy: ${inputs.lp || '(not provided)'}
+
+Write ONLY the improved email. Include subject line on the first line as "Subject: ..." then a blank line then the body. Do not add any commentary — just the rewritten email.`;
+}
+
+function render(data){
+  document.getElementById('loadingSection').style.display = 'none';
+
+  const failed = CRITERIA.filter(c => {
+    const cr = data.criteria && data.criteria[c.key];
+    return cr && cr.score < MIN;
+  });
+
+  const scoreClass = data.overall_score >= 136 ? 'pass' : data.overall_score >= 112 ? 'warn' : 'fail';
+
+  const pillMap = {
+    'Passed': `<span class="cpill cpill-pass">✓ MAS Compliant</span>`,
+    'Failed due to income/return claims': `<span class="cpill cpill-fail">✗ MAS Compliance Failed</span>`,
+    'Needs revision due to risky wording': `<span class="cpill cpill-warn">⚠ Needs Compliance Revision</span>`,
+  };
+  const pill = pillMap[data.compliance_status] || `<span class="cpill cpill-warn">⚠ Review Needed</span>`;
+
+  // Threshold panel
+  let threshHtml;
+  if(failed.length === 0){
+    threshHtml = `<div class="all-pass">🎉 All 16 criteria reached the 8.5 minimum</div>`;
+  } else {
+    const rows = failed.map(c=>`
+      <div class="fail-row">
+        <span>✗ ${esc(c.label)}</span>
+        <strong>${(data.criteria[c.key]?.score||0).toFixed(1)}/10</strong>
+      </div>`).join('');
+    threshHtml = `
+      <div class="some-fail">✗ ${failed.length} of 16 criteria below 8.5</div>
+      ${rows}`;
+  }
+
+  // Criteria cards
+  const cards = CRITERIA.map(c=>{
+    const cr = data.criteria?.[c.key] || {score:0,what_worked:'',needs_improvement:'',suggested_improvement:''};
+    const cl = cls(cr.score);
+    const pct = (cr.score/10*100).toFixed(1);
+    return `
+      <div class="crit-card ${cl}">
+        <div class="ch">
+          <div class="cn">${esc(c.label)}</div>
+          <div class="cs ${cl}">${cr.score.toFixed(1)}</div>
+        </div>
+        <div class="sbar">
+          <div class="sbar-fill ${cl}" style="width:0%" data-w="${pct}%"></div>
+          <div class="tmarker"></div>
+        </div>
+        <div class="cd">
+          ${cr.what_worked ? `<div class="di"><div class="dl">✓ What worked</div><div class="dt">${esc(cr.what_worked)}</div></div>` : ''}
+          <details>
+            <summary>▸ See improvement suggestions</summary>
+            ${cr.needs_improvement ? `<div class="di"><div class="dl">↑ Needs improvement</div><div class="dt">${esc(cr.needs_improvement)}</div></div>` : ''}
+            ${cr.suggested_improvement ? `<div class="di"><div class="dl">💡 Suggestion</div><div class="dt">${esc(cr.suggested_improvement)}</div></div>` : ''}
+          </details>
+        </div>
+      </div>`;
+  }).join('');
+
+  const html = `
+    <div class="banner">
+      <div>
+        <div class="score-display">
+          <div class="score-num score-${scoreClass}">${data.overall_score}</div>
+          <div class="score-den">/160</div>
+        </div>
+        ${pill}
+        <div style="font-size:11px;color:#9ca3af;margin-top:5px">Min. passing score: 136 / 160 (all criteria ≥ 8.5)</div>
+      </div>
+      <div class="threshold-panel">
+        <div class="tp-title">Threshold Check (8.5 minimum per criterion)</div>
+        ${threshHtml}
+      </div>
+    </div>
+
+    ${data.compliance_note ? `
+    <div class="alert alert-warn" style="margin-bottom:16px">
+      <span style="font-size:16px;flex-shrink:0">⚠️</span>
+      <span><strong>Compliance issue:</strong> ${esc(data.compliance_note)}</span>
+    </div>` : ''}
+
+    <div class="section">
+      <div class="sec-title">📋 Criteria Scores</div>
+      <div class="grid2">${cards}</div>
+    </div>
+
+    <div class="section">
+      <div class="sec-title">🔍 Analysis</div>
+      <div class="grid3">
+        <div class="list-card">
+          <div class="lct green">Top 3 Strengths</div>
+          ${(data.top_3_strengths||[]).map(s=>`<div class="li">${esc(s)}</div>`).join('')}
+        </div>
+        <div class="list-card">
+          <div class="lct red">Top 3 Weaknesses</div>
+          ${(data.top_3_weaknesses||[]).map(s=>`<div class="li">${esc(s)}</div>`).join('')}
+        </div>
+        <div class="list-card">
+          <div class="lct blue">Customer Journey Fixes</div>
+          <div class="li">${esc(data.customer_journey_fixes||'N/A')}</div>
+        </div>
+      </div>
+    </div>
+
+    ${data.compliance_fixes && data.compliance_fixes !== 'None required' ? `
+    <div class="section">
+      <div class="sec-title">🛡️ Compliance Fixes</div>
+      <div class="list-card">
+        <div class="li" style="white-space:pre-wrap">${esc(data.compliance_fixes)}</div>
+      </div>
+    </div>` : ''}
+
+    <div class="section">
+      <div class="sec-title">✍️ Improved Version</div>
+      <div class="imp-card">
+        <div id="genWrap" style="padding:16px 18px">
+          <button class="gen-btn" id="genBtn" onclick="generateImproved()">
+            <span id="genSpinEl" class="gen-spinner"></span>
+            <span id="genLabel">✨ Generate Rewritten Email (MAS-Compliant, 8.5+ on all criteria)</span>
+          </button>
+        </div>
+        <div class="imp-body open" id="impBody" style="display:none"></div>
+      </div>
+    </div>
+
+    <button class="reset-btn" onclick="resetForm()">← Evaluate Another Email</button>
+  `;
+
+  document.getElementById('resultsSection').innerHTML = html;
+  document.getElementById('resultsSection').style.display = 'block';
+
+  // Animate score bars
+  requestAnimationFrame(()=>{
+    document.querySelectorAll('.sbar-fill').forEach(b=>{
+      const w = b.dataset.w;
+      b.style.width = '0%';
+      requestAnimationFrame(()=>{ setTimeout(()=>{ b.style.width = w; }, 50); });
+    });
+  });
+}
+
+async function generateImproved(){
+  const btn = document.getElementById('genBtn');
+  const lbl = document.getElementById('genLabel');
+  const spin = document.getElementById('genSpinEl');
+  btn.disabled = true;
+  spin.style.display = 'inline-block';
+  lbl.textContent = 'Generating improved email…';
+
+  try {
+    const prompt = buildImprovedPrompt(lastInputs, lastData);
+    const rawResult2 = await window.cowork.askClaude(prompt);
+    const raw = typeof rawResult2 === 'string' ? rawResult2
+      : (rawResult2 && typeof rawResult2 === 'object')
+        ? (rawResult2.text || rawResult2.content || rawResult2.response || rawResult2.message || JSON.stringify(rawResult2))
+        : String(rawResult2 || '');
+
+    document.getElementById('genWrap').style.display = 'none';
+    const body = document.getElementById('impBody');
+    body.innerHTML = `
+      <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
+        <button class="copy-btn" onclick="copyText('impText')">📋 Copy Email</button>
+      </div>
+      <div class="imp-text" id="impText">${esc(raw)}</div>
+    `;
+    body.style.display = 'block';
+  } catch(err){
+    btn.disabled = false;
+    spin.style.display = 'none';
+    lbl.textContent = '✨ Generate Rewritten Email (retry)';
+    alert('Failed to generate improved version: ' + err.message);
+  }
+}
+
+function copyText(id){
+  const text = document.getElementById(id).textContent;
+  navigator.clipboard.writeText(text).then(()=>{
+    event.target.textContent = '✓ Copied!';
+    setTimeout(()=>{ event.target.innerHTML = '📋 Copy Email'; }, 2000);
+  });
+}
+
+function resetForm(){
+  document.getElementById('resultsSection').style.display = 'none';
+  document.getElementById('resultsSection').innerHTML = '';
+  document.getElementById('formSection').style.display = 'block';
+  document.getElementById('formError').innerHTML = '';
+  ['s1','s2','s3','s4','s5'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el){ el.classList.remove('active','done'); }
+  });
+  lastData = null; lastInputs = null;
+}
+</script>
+</body>
+</html>
